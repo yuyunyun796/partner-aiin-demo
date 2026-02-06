@@ -1,0 +1,14 @@
+{
+  "name": "partner-sso-demo",
+  "version": "1.0.0",
+  "description": "合作方 SSO 联调演示 - 模拟通过 iframe 集成 AiinStock H5",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-fetch": "^2.7.0"
+  }
+}

@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>合作方 SSO 联调演示</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="logo" id="tenantLogo">Partner<span>Demo</span></div>
+        <div class="user-info hidden" id="userInfo">
+            <div class="avatar" id="userAvatar">D</div>
+            <span class="username" id="userName">Demo User</span>
+            <button class="btn-logout" onclick="logout()">退出</button>
+        </div>
+    </nav>
+
+    <!-- 登录页面 -->
+    <div class="login-container" id="loginPage">
+        <div class="login-box">
+            <h2 id="loginTitle">登录 PartnerDemo</h2>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>用户名</label>
+                    <input type="text" id="username" placeholder="请输入用户名" value="demo">
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="password" placeholder="请输入密码" value="123456">
+                </div>
+                <button type="submit" class="btn-login">登 录</button>
+                <div class="error hidden" id="loginError"></div>
+            </form>
+            <div class="hint">
+                <strong>测试账号：</strong><br>
+                用户名: <code>demo</code> 密码: <code>123456</code><br>
+                用户名: <code>test</code> 密码: <code>123456</code>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主页面 -->
+    <div class="hidden" id="mainPage">
+        <!-- Tab 导航 -->
+        <div class="tab-nav">
+            <div class="tab active" data-tab="tenant" onclick="switchTab('tenant')">
+                <span class="icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span><span id="tenantTabName">PartnerDemo</span>
+            </div>
+            <div class="tab" data-tab="aiinstock" onclick="switchTab('aiinstock')">
+                <span class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg></span>AiinStock 行情
+            </div>
+            <div class="tab" data-tab="sso-guide" onclick="switchTab('sso-guide')">
+                <span class="icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>SSO 对接指南
+            </div>
+        </div>
+
+        <!-- 主容器 -->
+        <div class="main-container">
+            <!-- 内容区域 -->
+            <div class="content">
+                <!-- 租户首页 -->
+                <div class="tab-content active" id="tab-tenant">
+                    <div class="tenant-page">
+                        <div class="welcome">
+                            <h2>欢迎回来，<span id="welcomeName">用户</span>！</h2>
+                            <p id="welcomeDesc">这是 PartnerDemo 模拟页面。点击上方「AiinStock 行情」标签，将通过 SSO 联合登录进入 AiinStock 平台查看实时行情数据。</p>
+                        </div>
+
+                        <div class="info-box">
+                            <h3>账户信息</h3>
+                            <div class="item">
+                                <span>邮箱</span>
+                                <span class="value" id="infoEmail">-</span>
+                            </div>
+                            <div class="item">
+                                <span>昵称</span>
+                                <span class="value" id="infoNickname">-</span>
+                            </div>
+                            <div class="item">
+                                <span>时区</span>
+                                <span class="value" id="infoTimezone">-</span>
+                            </div>
+                            <div class="item">
+                                <span>语种</span>
+                                <span class="value" id="infoLanguage">-</span>
+                            </div>
+                        </div>
+
+                        <div class="code-showcase">
+                            <!-- 通信方式 Tab 切换 -->
+                            <div class="code-tabs">
+                                <div class="code-tab active" data-code-tab="postmessage" onclick="switchCodeTab('postmessage')">
+                                    <svg viewBox="0 0 24 24" width="14" height="14"><rect x="2" y="3" width="20" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 10h8M8 14h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                    postMessage（Iframe）
+                                </div>
+                                <div class="code-tab" data-code-tab="jsbridge" onclick="switchCodeTab('jsbridge')">
+                                    <svg viewBox="0 0 24 24" width="14" height="14"><rect x="5" y="2" width="14" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>
+                                    JS Bridge（App WebView）
+                                </div>
+                            </div>
+
+                            <!-- postMessage 代码 -->
+                            <div class="code-tab-content active" id="codeTab-postmessage">
+                                <div class="code-block">
+                                    <h3>Iframe 嵌入代码</h3>
+                                    <pre><code>&lt;iframe
+  sandbox="allow-popups allow-scripts allow-same-origin"
+  allow="clipboard-write clipboard-read"
+  src="{frontendUrl}/#/main?ssoToken={ssoToken}&amp;userCode={userCode}"
+&gt;&lt;/iframe&gt;</code></pre>
+                                </div>
+                                <div class="code-block">
+                                    <h3>父页面监听 SSO 请求</h3>
+                                    <pre><code>// 监听来自 AiinStock iframe 的 SSO 请求
+window.addEventListener('message', async (event) =&gt; {
+  // 安全校验：仅接受 AiinStock 域名消息
+  if (!event.origin.endsWith('.aiinstock.com')) return;
+  if (event.data?.type !== 'AIINSTOCK_SSO_REQUEST') return;
+
+  try {
+    // 调用合作方后端获取 SSO Token（apiSecret 安全存储在后端）
+    const response = await fetch('/api/aiinstock/sso-token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      }
+    });
+    const data = await response.json();
+
+    // 将 SSO Token 通过 postMessage 返回给 iframe
+    event.source.postMessage({
+      type: 'AIINSTOCK_SSO_RESPONSE',
+      requestId: event.data.requestId,
+      ssoToken: data.data.ssoToken,
+      userCode: data.data.userCode
+    }, event.origin);
+  } catch (error) {
+    event.source.postMessage({
+      type: 'AIINSTOCK_SSO_RESPONSE',
+      requestId: event.data.requestId,
+      error: error.message
+    }, event.origin);
+  }
+});</code></pre>
+                                </div>
+                            </div>
+
+                            <!-- JS Bridge 代码 -->
+                            <div class="code-tab-content" id="codeTab-jsbridge">
+                                <div class="code-block">
+                                    <h3>Bridge 对象注入（App 端）</h3>
+                                    <pre><code>// App 需要向 WebView 注入 AiinStockBridge 对象
+// H5 会通过此对象请求 SSO Token
+
+window.AiinStockBridge = {
+  /**
+   * @param {string} callbackName - H5 生成的回调函数名
+   * 成功: window[callbackName]({ ssoToken, userCode })
+   * 失败: window[callbackName]({ error: "错误信息" })
+   */
+  getSsoToken: function(callbackName) {
+    // 1. 调用合作方后端获取 ssoToken
+    YourApp.requestSsoToken(function(result) {
+      // 2. 通过回调返回给 H5
+      window[callbackName](result);
+    });
+  }
+};</code></pre>
+                                </div>
+                                <div class="code-block">
+                                    <h3>Android (Kotlin) 实现</h3>
+                                    <pre><code>class AiinStockBridge(private val webView: WebView) {
+    @JavascriptInterface
+    fun getSsoToken(callbackName: String) {
+        // 调用后端获取 SSO Token
+        PartnerApi.getSsoToken(currentUser.email) { result -&gt;
+            val json = if (result.isSuccess)
+                """{"ssoToken":"${result.ssoToken}",
+                    "userCode":${result.userCode}}"""
+            else
+                """{"error":"${result.errorMessage}"}"""
+
+            webView.post {
+                webView.evaluateJavascript(
+                    "window.$callbackName($json)", null
+                )
+            }
+        }
+    }
+}
+
+// 注册 Bridge
+webView.addJavascriptInterface(
+    AiinStockBridge(webView), "AiinStockBridge"
+)</code></pre>
+                                </div>
+                                <div class="code-block">
+                                    <h3>iOS (Swift) 实现</h3>
+                                    <pre><code>// 注入 Bridge 适配层
+let bridgeScript = """
+window.AiinStockBridge = {
+    getSsoToken: function(callbackName) {
+        window.webkit.messageHandlers.getSsoToken
+            .postMessage({callback: callbackName});
+    }
+};
+"""
+let userScript = WKUserScript(
+    source: bridgeScript,
+    injectionTime: .atDocumentStart,
+    forMainFrameOnly: true
+)
+webView.configuration.userContentController
+    .addUserScript(userScript)
+
+// 处理回调
+func userContentController(
+    _ controller: WKUserContentController,
+    didReceive message: WKScriptMessage
+) {
+    guard message.name == "getSsoToken",
+          let body = message.body as? [String: String],
+          let callback = body["callback"] else { return }
+
+    requestSsoToken { ssoToken, userCode in
+        let js = """
+        window["\(callback)"](
+            {"ssoToken":"\(ssoToken)","userCode":\(userCode)}
+        )
+        """
+        webView.evaluateJavaScript(js)
+    }
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AiinStock 页面 -->
+                <div class="tab-content" id="tab-aiinstock">
+                    <div class="aiinstock-page">
+                        <div class="url-bar">
+                            <label>H5 地址：</label>
+                            <input type="text" id="frontendUrlInput" placeholder="请输入 AiinStock H5 地址" onkeydown="if(event.key==='Enter')applyFrontendUrl()">
+                            <button onclick="applyFrontendUrl()">加载</button>
+                        </div>
+                        <div class="iframe-wrapper">
+                            <div class="loading" id="aiinstockLoading">
+                                <div class="spinner"></div>
+                                <div class="status" id="loadingStatus">正在获取登录凭证...</div>
+                                <div class="detail" id="loadingDetail"></div>
+                            </div>
+                            <div class="error-box hidden" id="aiinstockError">
+                                <h3>加载失败</h3>
+                                <p id="errorMessage">获取 SSO Token 失败</p>
+                                <button class="btn-retry" onclick="loadAiinStock()">重试</button>
+                            </div>
+                            <iframe sandbox="allow-popups allow-scripts allow-same-origin" id="aiinstockIframe" class="hidden" allow="clipboard-write clipboard-read"></iframe>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SSO 对接指南 -->
+                <div class="tab-content" id="tab-sso-guide">
+                    <div class="guide-page">
+                        <!-- 左侧导航 -->
+                        <nav class="guide-nav">
+                            <div class="nav-title">文档目录</div>
+                            <div class="nav-item active" data-section="overview">概述</div>
+                            <div class="nav-item" data-section="prepare">接入准备</div>
+                            <div class="nav-item" data-section="flow">接入流程</div>
+                            <div class="nav-item" data-section="api">接口说明</div>
+                            <div class="nav-item" data-section="sign">签名算法</div>
+                            <div class="nav-item" data-section="impl">实现参考</div>
+                            <div class="nav-item" data-section="frontend">前端集成</div>
+                            <div class="nav-item" data-section="security">安全机制</div>
+                            <div class="nav-item" data-section="errors">错误码</div>
+                            <div class="nav-item" data-section="notes">注意事项</div>
+                        </nav>
+                        <!-- 右侧内容 -->
+                        <div class="guide-body">
+
+<!-- ===== 概述 ===== -->
+<div class="guide-section active" id="guide-overview">
+    <h1>AiinStock SSO 接入文档</h1>
+    <p class="subtitle">本文档面向合作方技术团队，说明如何通过 SSO 接口实现用户互通。</p>
+
+    <h2>接入方式</h2>
+    <p>根据合作方的技术场景，AiinStock 支持两种接入方式：</p>
+    <table class="param-table">
+        <thead><tr><th>方式</th><th>适用场景</th><th>通信机制</th><th>说明</th></tr></thead>
+        <tbody>
+            <tr><td><strong>URL 重定向</strong></td><td>独立浏览器页面</td><td>页面跳转 + URL 参数</td><td>传统 Web 应用，通过页面重定向传递 ssoToken</td></tr>
+            <tr><td><strong>消息通信</strong></td><td>App WebView / 浏览器 Iframe</td><td>JS Bridge / postMessage</td><td>嵌入式场景，无需页面跳转，通过消息通信获取 ssoToken</td></tr>
+        </tbody>
+    </table>
+
+    <h2>合作模式</h2>
+    <table class="param-table">
+        <thead><tr><th>模式</th><th>说明</th><th>用户归属</th></tr></thead>
+        <tbody>
+            <tr><td><strong>租户模式 (TENANT)</strong></td><td>用户隔离在合作方名下，同一邮箱在不同租户下独立</td><td>租户用户（tenant_id = 合作方ID）</td></tr>
+            <tr><td><strong>引流模式 (REFERRAL)</strong></td><td>用户为 AiinStock 平台用户，仅记录邀请来源</td><td>平台用户（tenant_id = NULL）</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- ===== 接入准备 ===== -->
+<div class="guide-section" id="guide-prepare">
+    <h2>获取凭证</h2>
+    <p>联系 AiinStock 运营团队获取以下信息：</p>
+    <table class="param-table">
+        <thead><tr><th>参数</th><th>说明</th></tr></thead>
+        <tbody>
+            <tr><td><code>apiKey</code></td><td>API Key（用于 API 调用，64位字符串）</td></tr>
+            <tr><td><code>apiSecret</code></td><td>API Secret（用于签名，64位字符串，<strong>不可泄露</strong>）</td></tr>
+        </tbody>
+    </table>
+
+    <h2>环境地址</h2>
+    <h3>API 地址</h3>
+    <table class="param-table">
+        <thead><tr><th>环境</th><th>API 地址</th></tr></thead>
+        <tbody>
+            <tr><td>测试环境</td><td><code>https://dev-api.aiinstock.com</code></td></tr>
+            <tr><td>生产环境</td><td><code>https://api.aiinstock.com</code></td></tr>
+        </tbody>
+    </table>
+    <h3>前端地址（合作方专属域名）</h3>
+    <p>AiinStock 会为每个合作方分配专属的二级域名，或合作方可提供自定义域名及域名证书。</p>
+    <table class="param-table">
+        <thead><tr><th>环境</th><th>域名格式</th><th>示例</th></tr></thead>
+        <tbody>
+            <tr><td>测试环境</td><td><code>https://{partner}-dev.aiinstock.com</code></td><td><code>https://demo-dev.aiinstock.com</code></td></tr>
+            <tr><td>生产环境</td><td><code>https://{partner}.aiinstock.com</code></td><td><code>https://demo.aiinstock.com</code></td></tr>
+            <tr><td>自定义域名</td><td>合作方自行提供</td><td><code>https://stock.partner.com</code></td></tr>
+        </tbody>
+    </table>
+
+    <h2>页面 URL 参数</h2>
+    <table class="param-table">
+        <thead><tr><th>参数</th><th>说明</th></tr></thead>
+        <tbody>
+            <tr><td><code>ssoToken</code></td><td>SSO Token（首次登录或用户切换时传递）</td></tr>
+            <tr><td><code>userCode</code></td><td>用户编号（用于检测用户切换）</td></tr>
+        </tbody>
+    </table>
+    <pre><code>https://{合作方专属域名}/?ssoToken=xxx&userCode=xxx</code></pre>
+
+    <h2>需要合作方提供</h2>
+    <h3>URL 重定向方式</h3>
+    <table class="param-table">
+        <thead><tr><th>项目</th><th>必填</th><th>说明</th></tr></thead>
+        <tbody>
+            <tr><td>联合登录页面 URL</td><td>是</td><td>当用户未登录时，AiinStock 首页会重定向到此地址</td></tr>
+            <tr><td>自定义域名</td><td>否</td><td>如需使用自有域名，需提供域名及 SSL 证书</td></tr>
+        </tbody>
+    </table>
+    <h3>消息通信方式（App WebView / 浏览器 Iframe）</h3>
+    <table class="param-table">
+        <thead><tr><th>项目</th><th>必填</th><th>说明</th></tr></thead>
+        <tbody>
+            <tr><td>JS Bridge 实现</td><td>是（App）</td><td>App 需实现 <code>AiinStockBridge</code> 对象</td></tr>
+            <tr><td>postMessage 监听</td><td>是（Iframe）</td><td>父页面需监听 <code>AIINSTOCK_SSO_REQUEST</code> 消息</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- ===== 接入流程 ===== -->
+<div class="guide-section" id="guide-flow">
+    <h2>方式一：URL 重定向（独立浏览器页面）</h2>
+    <p>适用于传统 Web 应用，用户通过独立浏览器页面访问 AiinStock。</p>
+    <div class="flow-step"><div class="num">1</div><div class="desc">用户在合作方完成登录</div></div>
+    <div class="flow-step"><div class="num">2</div><div class="desc">用户点击入口进入 AiinStock（合作方负责拼接 <code>userCode</code> 参数）</div></div>
+    <div class="flow-step"><div class="num">3</div><div class="desc">AiinStock 前端检查本地登录态，比对 URL 中的 <code>userCode</code></div></div>
+    <div class="flow-step"><div class="num">4</div><div class="desc">若未登录或 userCode 不匹配，<strong>重定向到合作方联合登录页</strong></div></div>
+    <div class="flow-step"><div class="num">5</div><div class="desc">合作方调用 <code>POST /member/sso/public/token</code> 获取 ssoToken</div></div>
+    <div class="flow-step"><div class="num">6</div><div class="desc">将 <code>userCode</code> 保存到本地存储，重定向到合作方专属首页：<code>?ssoToken=xxx&userCode=xxx</code></div></div>
+    <div class="flow-step"><div class="num">7</div><div class="desc">AiinStock 前端从 URL 取出 ssoToken，自动完成登录</div></div>
+
+    <h2>方式二：App WebView（JS Bridge）</h2>
+    <p>适用于合作方 App 中通过 WebView 嵌入 AiinStock H5 页面。</p>
+    <div class="flow-step"><div class="num">1</div><div class="desc">用户在合作方 App 登录，打开 WebView 加载 AiinStock H5</div></div>
+    <div class="flow-step"><div class="num">2</div><div class="desc">AiinStock H5 检测到登录态丢失，调用 JS Bridge: <code>AiinStockBridge.getSsoToken(callback)</code></div></div>
+    <div class="flow-step"><div class="num">3</div><div class="desc">App 调用合作方后端获取 ssoToken（<strong>apiSecret 存储在后端</strong>）</div></div>
+    <div class="flow-step"><div class="num">4</div><div class="desc">后端调用 AiinStock API，返回 ssoToken 和 userCode</div></div>
+    <div class="flow-step"><div class="num">5</div><div class="desc">App 通过回调 <code>window[callback]({ssoToken, userCode})</code> 返回给 WebView</div></div>
+
+    <h2>方式三：浏览器 Iframe（postMessage）</h2>
+    <p>适用于合作方网页中通过 Iframe 嵌入 AiinStock H5 页面。</p>
+    <div class="flow-step"><div class="num">1</div><div class="desc">用户在合作方网页登录，加载 Iframe 嵌入 AiinStock H5</div></div>
+    <div class="flow-step"><div class="num">2</div><div class="desc">AiinStock H5 检测到登录态丢失，通过 <code>postMessage</code> 发送 <code>AIINSTOCK_SSO_REQUEST</code></div></div>
+    <div class="flow-step"><div class="num">3</div><div class="desc">父页面调用合作方后端获取 ssoToken（<strong>apiSecret 存储在后端</strong>）</div></div>
+    <div class="flow-step"><div class="num">4</div><div class="desc">通过 <code>postMessage</code> 将 <code>AIINSTOCK_SSO_RESPONSE</code> 返回给 Iframe</div></div>
+    <div class="flow-step"><div class="num">5</div><div class="desc">AiinStock H5 使用 ssoToken 完成自动登录</div></div>
+
+    <h2>userCode 机制说明</h2>
+    <p><code>userCode</code> 是 AiinStock 为每个用户生成的唯一标识，用于检测用户切换。仅适用于 URL 重定向和 Iframe 方式。</p>
+    <ol>
+        <li><strong>首次访问</strong>：调用 SSO Token 接口后，将返回的 <code>userCode</code> 保存到本地存储，与合作方用户关联</li>
+        <li><strong>后续访问</strong>：跳转到合作方专属首页时，从本地存储取出该用户的 <code>userCode</code>，拼接到 URL 参数中</li>
+        <li><strong>用户切换</strong>：需要同时传递 <code>ssoToken</code> 和 <code>userCode</code></li>
+    </ol>
+</div>
+
+<!-- ===== 接口说明 ===== -->
+<div class="guide-section" id="guide-api">
+    <h2>获取 SSO Token</h2>
+    <pre><code>POST /member/sso/public/token
+Content-Type: application/json
+X-API-Key: {apiKey}</code></pre>
+
+    <h3>请求头</h3>
+    <table class="param-table">
+        <thead><tr><th>Header</th><th>必填</th><th>说明</th></tr></thead>
+        <tbody>
+            <tr><td><code>X-API-Key</code></td><td>是</td><td>API Key（64位字符串）</td></tr>
+        </tbody>
+    </table>
+
+    <h3>请求参数</h3>
+    <table class="param-table">
+        <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+        <tbody>
+            <tr><td><code>email</code></td><td>String</td><td>是</td><td>用户邮箱（作为唯一标识）</td></tr>
+            <tr><td><code>nickname</code></td><td>String</td><td>否</td><td>用户昵称（新用户创建时使用）</td></tr>
+            <tr><td><code>walletAddress</code></td><td>String</td><td>否</td><td>钱包地址</td></tr>
+            <tr><td><code>timezone</code></td><td>String</td><td>否</td><td>IANA 时区标识，如 <code>Asia/Shanghai</code></td></tr>
+            <tr><td><code>language</code></td><td>String</td><td>否</td><td>ISO 639-1 语言代码，如 <code>zh-CN</code>、<code>en-US</code></td></tr>
+            <tr><td><code>timestamp</code></td><td>Long</td><td>是</td><td>当前时间戳（毫秒），5分钟内有效</td></tr>
+            <tr><td><code>nonce</code></td><td>String</td><td>是</td><td>随机字符串（UUID），防重放</td></tr>
+            <tr><td><code>sign</code></td><td>String</td><td>是</td><td>HMAC-SHA256 签名（<code>apiKey</code> 不参与签名）</td></tr>
+        </tbody>
+    </table>
+
+    <h3>请求示例</h3>
+    <pre><code>POST /member/sso/public/token HTTP/1.1
+Content-Type: application/json
+X-API-Key: a1b2c3d4e5f6...
+
+{
+  "email": "user@example.com",
+  "nickname": "张三",
+  "timezone": "Asia/Shanghai",
+  "language": "zh-CN",
+  "timestamp": 1706400000000,
+  "nonce": "550e8400-e29b-41d4-a716-446655440000",
+  "sign": "a1b2c3d4e5f6..."
+}</code></pre>
+
+    <h3>响应参数</h3>
+    <table class="param-table">
+        <thead><tr><th>参数</th><th>类型</th><th>说明</th></tr></thead>
+        <tbody>
+            <tr><td><code>code</code></td><td>Integer</td><td>0=成功</td></tr>
+            <tr><td><code>data.status</code></td><td>String</td><td><code>CREATED</code>=新创建用户，<code>EXISTING</code>=已有用户</td></tr>
+            <tr><td><code>data.ssoToken</code></td><td>String</td><td>SSO Token（一次性，5分钟有效）</td></tr>
+            <tr><td><code>data.userCode</code></td><td>Long</td><td>用户编号</td></tr>
+            <tr><td><code>data.expiresIn</code></td><td>Integer</td><td>过期时间（秒）</td></tr>
+        </tbody>
+    </table>
+
+    <h3>响应示例</h3>
+    <pre><code>{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "status": "CREATED",
+    "ssoToken": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
+    "userCode": 123456,
+    "expiresIn": 300
+  }
+}</code></pre>
+</div>
+
+<!-- ===== 签名算法 ===== -->
+<div class="guide-section" id="guide-sign">
+    <h2>签名规则</h2>
+    <ol>
+        <li>将所有业务参数（<strong>不含</strong> <code>sign</code> 和 <code>apiKey</code>）按 <strong>key 字母序升序</strong> 排列</li>
+        <li><strong>非 ASCII 字符需进行百分比编码</strong>（percent-encoding），如中文、特殊符号</li>
+        <li>拼接为 <code>key1=value1&key2=value2&...</code> 格式</li>
+        <li><strong>值为空或 null 的参数不参与签名</strong></li>
+        <li><code>apiKey</code> <strong>不参与</strong>签名计算（仅通过 Header 传输）</li>
+        <li>使用 <code>apiSecret</code> 作为密钥，对拼接字符串进行 HMAC-SHA256 签名</li>
+        <li>签名结果转为<strong>小写十六进制</strong>字符串</li>
+    </ol>
+    <div class="note-box">
+        百分比编码说明：使用标准的 URL 编码（RFC 3986）。中文 <code>张三</code> 编码为 <code>%E5%BC%A0%E4%B8%89</code>，空格编码为 <code>%20</code> 或 <code>+</code>，<code>@</code> 编码为 <code>%40</code>。
+    </div>
+
+    <h2>签名示例</h2>
+    <h3>Step 1: 对非 ASCII 字符进行百分比编码</h3>
+    <pre><code>nickname = 张三 → nickname = %E5%BC%A0%E4%B8%89</code></pre>
+
+    <h3>Step 2: 按 key 字母序排列并拼接（不含 apiKey）</h3>
+    <pre><code>email=user%40example.com&language=zh-CN&nickname=%E5%BC%A0%E4%B8%89&nonce=550e8400-e29b-41d4-a716-446655440000&timestamp=1706400000000&timezone=Asia%2FShanghai</code></pre>
+    <div class="note-box">
+        参数按字母序：<code>email</code> → <code>language</code> → <code>nickname</code> → <code>nonce</code> → <code>timestamp</code> → <code>timezone</code>。<code>apiKey</code> 不参与签名。
+    </div>
+
+    <h3>Step 3: HMAC-SHA256 签名</h3>
+    <pre><code>sign = HMAC-SHA256(apiSecret, 待签名字符串)  // 输出小写 hex</code></pre>
+</div>
+
+<!-- ===== 实现参考 ===== -->
+<div class="guide-section" id="guide-impl">
+    <h2>Java 示例</h2>
+    <pre><code>// HMAC-SHA256 签名（参数按字母序排列，apiKey 不参与签名）
+public String sign(String email, String language, String nickname,
+                   String nonce, long timestamp, String timezone,
+                   String walletAddress) throws Exception {
+    StringBuilder sb = new StringBuilder();
+    boolean first = true;
+    if (email != null &amp;&amp; !email.isEmpty()) {
+        sb.append("email=").append(URLEncoder.encode(email, "UTF-8"));
+        first = false;
+    }
+    if (language != null &amp;&amp; !language.isEmpty()) {
+        if (!first) sb.append("&amp;");
+        sb.append("language=").append(URLEncoder.encode(language, "UTF-8"));
+        first = false;
+    }
+    if (nickname != null &amp;&amp; !nickname.isEmpty()) {
+        if (!first) sb.append("&amp;");
+        sb.append("nickname=").append(URLEncoder.encode(nickname, "UTF-8"));
+        first = false;
+    }
+    if (!first) sb.append("&amp;");
+    sb.append("nonce=").append(URLEncoder.encode(nonce, "UTF-8"));
+    sb.append("&amp;timestamp=").append(timestamp);
+    if (timezone != null &amp;&amp; !timezone.isEmpty()) {
+        sb.append("&amp;timezone=").append(URLEncoder.encode(timezone, "UTF-8"));
+    }
+    if (walletAddress != null &amp;&amp; !walletAddress.isEmpty()) {
+        sb.append("&amp;walletAddress=").append(URLEncoder.encode(walletAddress, "UTF-8"));
+    }
+
+    Mac mac = Mac.getInstance("HmacSHA256");
+    SecretKeySpec key = new SecretKeySpec(
+        apiSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+    mac.init(key);
+    byte[] hash = mac.doFinal(sb.toString().getBytes(StandardCharsets.UTF_8));
+    StringBuilder hex = new StringBuilder();
+    for (byte b : hash) hex.append(String.format("%02x", b));
+    return hex.toString();
+}</code></pre>
+
+    <h2>Python 示例</h2>
+    <pre><code>import hmac, hashlib, uuid, time, requests
+from urllib.parse import quote
+
+def sign(api_secret, email, language, nickname, nonce,
+         timestamp, timezone, wallet_address):
+    params = []
+    if email:
+        params.append(f"email={quote(email, safe='')}")
+    if language:
+        params.append(f"language={quote(language, safe='')}")
+    if nickname:
+        params.append(f"nickname={quote(nickname, safe='')}")
+    params.append(f"nonce={quote(nonce, safe='')}")
+    params.append(f"timestamp={timestamp}")
+    if timezone:
+        params.append(f"timezone={quote(timezone, safe='')}")
+    if wallet_address:
+        params.append(f"walletAddress={quote(wallet_address, safe='')}")
+
+    message = "&amp;".join(params)
+    return hmac.new(
+        api_secret.encode("utf-8"),
+        message.encode("utf-8"),
+        hashlib.sha256
+    ).hexdigest()</code></pre>
+
+    <h2>Node.js 示例（本项目 server.js）</h2>
+    <pre><code>const crypto = require('crypto');
+
+function sign(apiSecret, signString) {
+    return crypto.createHmac('sha256', apiSecret)
+        .update(signString).digest('hex');
+}
+
+function buildSignString(email, language, nickname, nonce,
+                         timestamp, timezone, walletAddress) {
+    const params = [];
+    if (email) params.push(`email=${encodeURIComponent(email)}`);
+    if (language) params.push(`language=${encodeURIComponent(language)}`);
+    if (nickname) params.push(`nickname=${encodeURIComponent(nickname)}`);
+    params.push(`nonce=${encodeURIComponent(nonce)}`);
+    params.push(`timestamp=${timestamp}`);
+    if (timezone) params.push(`timezone=${encodeURIComponent(timezone)}`);
+    if (walletAddress) params.push(`walletAddress=${encodeURIComponent(walletAddress)}`);
+    return params.join('&amp;');
+}</code></pre>
+</div>
+
+<!-- ===== 前端集成 ===== -->
+<div class="guide-section" id="guide-frontend">
+    <h2>适用场景</h2>
+    <table class="param-table">
+        <thead><tr><th>场景</th><th>通信方式</th><th>说明</th></tr></thead>
+        <tbody>
+            <tr><td><strong>App WebView</strong></td><td>JS Bridge</td><td>合作方 App 中嵌入 AiinStock H5</td></tr>
+            <tr><td><strong>浏览器 Iframe</strong></td><td>postMessage</td><td>合作方网页中通过 Iframe 嵌入 AiinStock H5</td></tr>
+        </tbody>
+    </table>
+
+    <h2>JS Bridge 规范（App WebView）</h2>
+    <p>合作方 App 需要向 WebView 注入名为 <code>AiinStockBridge</code> 的 JS Bridge 对象：</p>
+    <pre><code>window.AiinStockBridge = {
+  /**
+   * 获取 SSO Token
+   * @param {string} callbackName - 回调函数名
+   *
+   * App 需要：
+   * 1. 调用合作方后端获取 ssoToken 和 userCode
+   * 2. 调用: window[callbackName]({ssoToken, userCode})
+   * 失败: window[callbackName]({error: "错误信息"})
+   */
+  getSsoToken: function(callbackName) { ... }
+};</code></pre>
+
+    <h4>Android (Kotlin)</h4>
+    <pre><code>class AiinStockBridge(private val webView: WebView) {
+    @JavascriptInterface
+    fun getSsoToken(callbackName: String) {
+        PartnerApi.getSsoToken(currentUser.email) { result ->
+            val json = if (result.isSuccess)
+                """{"ssoToken":"${result.ssoToken}","userCode":${result.userCode}}"""
+            else """{"error":"${result.errorMessage}"}"""
+            webView.post {
+                webView.evaluateJavascript("window.$callbackName($json)", null)
+            }
+        }
+    }
+}
+// 注册
+webView.addJavascriptInterface(AiinStockBridge(webView), "AiinStockBridge")</code></pre>
+
+    <h4>iOS (Swift)</h4>
+    <pre><code>// 注入适配层
+let bridgeScript = """
+window.AiinStockBridge = {
+    getSsoToken: function(callbackName) {
+        window.webkit.messageHandlers.getSsoToken
+            .postMessage({callback: callbackName});
+    }
+};
+"""
+let userScript = WKUserScript(source: bridgeScript,
+    injectionTime: .atDocumentStart, forMainFrameOnly: true)
+webView.configuration.userContentController.addUserScript(userScript)</code></pre>
+
+    <h2>postMessage 规范（浏览器 Iframe）</h2>
+    <h3>消息类型一览</h3>
+    <table class="param-table">
+        <thead><tr><th>方向</th><th>type</th><th>说明</th></tr></thead>
+        <tbody>
+            <tr><td>iframe → 父页面</td><td><code>AIINSTOCK_SSO_REQUEST</code></td><td>请求 SSO Token（含 <code>requestId</code>）</td></tr>
+            <tr><td>父页面 → iframe</td><td><code>AIINSTOCK_SSO_RESPONSE</code></td><td>返回 <code>ssoToken</code>、<code>userCode</code>（或 <code>error</code>）</td></tr>
+            <tr><td>iframe → 父页面</td><td><code>AIINSTOCK_TOKEN_EXPIRED</code></td><td>通知 Token 已过期</td></tr>
+            <tr><td>iframe → 父页面</td><td><code>AIINSTOCK_CLOSE_WEBVIEW</code></td><td>请求关闭 WebView</td></tr>
+        </tbody>
+    </table>
+
+    <h3>消息格式（TypeScript）</h3>
+    <pre><code>// AiinStock -> 合作方（请求）
+interface SsoRequest {
+  type: 'AIINSTOCK_SSO_REQUEST';
+  requestId: string;
+}
+
+// 合作方 -> AiinStock（响应）
+interface SsoResponse {
+  type: 'AIINSTOCK_SSO_RESPONSE';
+  requestId: string;
+  ssoToken?: string;   // 成功时返回
+  userCode?: number;   // 成功时返回
+  error?: string;      // 失败时返回
+}</code></pre>
+
+    <h3>父页面监听示例</h3>
+    <pre><code>window.addEventListener('message', async (event) => {
+  // 安全校验：仅允许来自 AiinStock 域名的消息
+  if (!event.origin.endsWith('.aiinstock.com')) return;
+  if (event.data?.type !== 'AIINSTOCK_SSO_REQUEST') return;
+
+  try {
+    const resp = await fetch('/api/aiinstock/sso-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: currentUser.email })
+    });
+    const { ssoToken, userCode } = await resp.json();
+    event.source.postMessage({
+      type: 'AIINSTOCK_SSO_RESPONSE',
+      requestId: event.data.requestId,
+      ssoToken, userCode
+    }, event.origin);
+  } catch (error) {
+    event.source.postMessage({
+      type: 'AIINSTOCK_SSO_RESPONSE',
+      requestId: event.data.requestId,
+      error: error.message
+    }, event.origin);
+  }
+});</code></pre>
+
+    <h3>iframe 加载方式</h3>
+    <pre><code>&lt;iframe
+  sandbox="allow-popups allow-scripts allow-same-origin"
+  allow="clipboard-write clipboard-read"
+  src="{frontendUrl}/?ssoToken={ssoToken}&amp;userCode={userCode}"
+&gt;&lt;/iframe&gt;</code></pre>
+
+    <h2>User-Agent 规范（可选）</h2>
+    <pre><code>格式: {原始UA} AiinStockPartner/{partnerCode}/{appVersion}
+示例: Mozilla/5.0 ... AiinStockPartner/demo/1.0.0</code></pre>
+</div>
+
+<!-- ===== 安全机制 ===== -->
+<div class="guide-section" id="guide-security">
+    <h2>安全机制总览</h2>
+    <table class="param-table">
+        <thead><tr><th>机制</th><th>说明</th></tr></thead>
+        <tbody>
+            <tr><td>HMAC-SHA256 签名</td><td>防篡改，所有参数参与签名</td></tr>
+            <tr><td>时间戳校验</td><td>请求 5 分钟内有效，防重放</td></tr>
+            <tr><td>Nonce 去重</td><td>每个 nonce 只能使用一次（Redis 10分钟去重窗口）</td></tr>
+            <tr><td>SSO Token 一次性</td><td>使用后立即失效，不可重复使用</td></tr>
+            <tr><td>SSO Token 短有效期</td><td>5 分钟过期</td></tr>
+            <tr><td>IP 白名单</td><td>可配置，限制合作方服务端调用来源 IP</td></tr>
+            <tr><td>HTTPS</td><td>全链路加密传输</td></tr>
+        </tbody>
+    </table>
+
+    <h2>apiSecret 安全架构</h2>
+    <pre><code>❌ 错误做法：App / 前端直接调用 AiinStock API（apiSecret 暴露）
+
+✅ 正确做法：
+┌───────────┐     请求      ┌──────────┐    apiSecret   ┌───────────┐
+│ App/前端  │ ────────────► │ 合作方后端│ ─────────────► │ AiinStock │
+│           │               │          │                │   API     │
+└───────────┘               └──────────┘                └───────────┘</code></pre>
+
+    <h2>各场景安全风险</h2>
+    <table class="param-table">
+        <thead><tr><th>安全风险</th><th>说明</th><th>应对措施</th></tr></thead>
+        <tbody>
+            <tr><td>JS Bridge 被恶意调用</td><td>WebView 加载恶意页面可能调用 Bridge</td><td>App 端对 WebView URL 做白名单校验</td></tr>
+            <tr><td>ssoToken 泄露</td><td>Token 在传递过程中被截获</td><td>HTTPS + 5分钟有效期 + 一次性使用</td></tr>
+            <tr><td>apiSecret 泄露</td><td>App 本地存储被反编译</td><td><strong>必须存储在合作方后端</strong></td></tr>
+            <tr><td>中间人攻击</td><td>请求被拦截篡改</td><td>SSL Pinning（可选）</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- ===== 错误码 ===== -->
+<div class="guide-section" id="guide-errors">
+    <h2>错误码列表</h2>
+    <table class="param-table">
+        <thead><tr><th>错误码</th><th>说明</th></tr></thead>
+        <tbody>
+            <tr><td><code>24001</code></td><td>合作方不存在（apiKey 无效）</td></tr>
+            <tr><td><code>24002</code></td><td>合作方已禁用</td></tr>
+            <tr><td><code>24003</code></td><td>签名验证失败</td></tr>
+            <tr><td><code>24004</code></td><td>请求已过期（时间戳超过5分钟）</td></tr>
+            <tr><td><code>24005</code></td><td>重复请求（nonce重复）</td></tr>
+            <tr><td><code>24006</code></td><td>SSO Token 无效或已过期</td></tr>
+            <tr><td><code>24007</code></td><td>IP 不在白名单</td></tr>
+            <tr><td><code>11001</code></td><td>用户不存在</td></tr>
+        </tbody>
+    </table>
+
+    <h3>错误响应示例</h3>
+    <pre><code>{
+  "code": 24003,
+  "message": "签名验证失败",
+  "data": null
+}</code></pre>
+</div>
+
+<!-- ===== 注意事项 ===== -->
+<div class="guide-section" id="guide-notes">
+    <h2>注意事项</h2>
+    <ol>
+        <li><strong>apiSecret 安全</strong>：apiSecret 仅在服务端使用，<strong>严禁</strong>暴露到前端或客户端</li>
+        <li><strong>时钟同步</strong>：请确保服务器时间与 UTC 时间同步，否则可能导致时间戳校验失败</li>
+        <li><strong>nonce 唯一性</strong>：建议使用 UUID 作为 nonce，每次请求必须不同</li>
+        <li><strong>SSO Token 使用</strong>：SSO Token 只能使用一次，使用后立即失效；过期也会失效</li>
+        <li><strong>邮箱标准化</strong>：邮箱会自动转为小写处理，<code>User@Example.com</code> 与 <code>user@example.com</code> 视为同一用户</li>
+        <li><strong>租户隔离</strong>：租户模式下，同一邮箱在不同租户下为不同用户；引流模式下为同一平台用户</li>
+    </ol>
+
+    <div class="note-box">
+        本页面「AiinStock 行情」Tab 即为完整的 Iframe 对接效果演示，右侧调试面板可实时查看 SSO 消息通信日志。
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 调试面板 - 右侧 -->
+            <div class="debug-panel" id="debugPanel">
+                <div class="header">
+                    <h4>SSO 调试日志</h4>
+                    <button onclick="testSendSsoResponse()" style="background:#0e5c2d;color:#69db7c;border:none;padding:4px 8px;border-radius:3px;cursor:pointer;font-size:11px;margin-left:auto;margin-right:8px;" title="模拟发送 SSO 响应到 iframe（测试用）">测试响应</button>
+                    <div class="btns">
+                        <button onclick="clearLogs()">清空</button>
+                        <button onclick="toggleDebugPanel()">收起</button>
+                    </div>
+                </div>
+
+                <!-- JS Bridge 模拟面板 -->
+                <div class="bridge-sim" id="bridgeSim">
+                    <div class="bridge-sim-header" onclick="toggleBridgeSim()">
+                        <span class="bridge-sim-title">JS Bridge 模拟</span>
+                        <span class="bridge-sim-toggle" id="bridgeSimToggle">&#9660;</span>
+                    </div>
+                    <div class="bridge-sim-body" id="bridgeSimBody">
+                        <div class="bridge-sim-desc">模拟 App WebView 中 <code>AiinStockBridge.getSsoToken()</code> 的完整调用流程</div>
+
+                        <!-- 步骤区域 -->
+                        <div class="bridge-steps">
+                            <div class="bridge-step" id="bridgeStep1">
+                                <div class="step-num">1</div>
+                                <div class="step-content">
+                                    <div class="step-label">H5 检测 Bridge</div>
+                                    <div class="step-code" id="bridgeStep1Code">window.AiinStockBridge — 等待启动</div>
+                                </div>
+                            </div>
+                            <div class="bridge-step" id="bridgeStep2">
+                                <div class="step-num">2</div>
+                                <div class="step-content">
+                                    <div class="step-label">H5 调用 getSsoToken</div>
+                                    <div class="step-code" id="bridgeStep2Code">等待上一步...</div>
+                                </div>
+                            </div>
+                            <div class="bridge-step" id="bridgeStep3">
+                                <div class="step-num">3</div>
+                                <div class="step-content">
+                                    <div class="step-label">App 调用后端获取 Token</div>
+                                    <div class="step-code" id="bridgeStep3Code">等待上一步...</div>
+                                </div>
+                            </div>
+                            <div class="bridge-step" id="bridgeStep4">
+                                <div class="step-num">4</div>
+                                <div class="step-content">
+                                    <div class="step-label">App 执行回调返回结果</div>
+                                    <div class="step-code" id="bridgeStep4Code">等待上一步...</div>
+                                </div>
+                            </div>
+                            <div class="bridge-step" id="bridgeStep5">
+                                <div class="step-num">5</div>
+                                <div class="step-content">
+                                    <div class="step-label">H5 完成登录</div>
+                                    <div class="step-code" id="bridgeStep5Code">等待上一步...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="bridge-sim-btn" id="bridgeSimBtn" onclick="runBridgeSimulation()">
+                            <svg viewBox="0 0 24 24" width="14" height="14"><polygon points="5,3 19,12 5,21" fill="currentColor"/></svg>
+                            开始模拟
+                        </button>
+                    </div>
+                </div>
+
+                <div class="logs" id="debugLogs"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
